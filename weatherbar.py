@@ -1,26 +1,31 @@
 import rumps
 import pyowm
 
+
 class WeatherBar(object):
     api = "f68c7296446b5dfeb8e20c1806ea3e97"
     cityName = "Chicago"
+
     degreeSymbol = u'\N{DEGREE SIGN}'
     unit = "fahrenheit"
+    unitTitle = f"{degreeSymbol}F | {degreeSymbol}C"
+    minutes = 20
+    interval = minutes * 60
 
     def __init__(self):
-
         self.setLocationButton = rumps.MenuItem(title="Change Location", callback=self.setLocation)
-        self.setWeatherButton = rumps.MenuItem(title="Refresh", callback=self.refreshWeather)
-        self.setUnitButton = rumps.MenuItem(title=f"{self.degreeSymbol}F | {self.degreeSymbol}C", callback=self.setCurrentUnit)
+        self.setWeatherButton = rumps.MenuItem(title="Refresh", callback=self.callUpdateWeather)
+        self.setUnitButton = rumps.MenuItem(title=self.unitTitle, callback=self.setCurrentUnit)
         self.setAPIKeyButton = rumps.MenuItem(title="Settings", callback=self.setAPIKey)
+        self.refreshTimer = rumps.Timer(self.callUpdateWeather, self.interval)
+        self.refreshTimer.start()
 
         self.app = rumps.App("WeatherBar")
-        self.app.title = "Weather"
+        self.app.title = "️"
 
         self.initializeMenu()
 
     def initializeMenu(self):
-
         self.app.menu.add(self.setUnitButton)
         self.app.menu.add(self.setLocationButton)
         self.app.menu.add(self.setWeatherButton)
@@ -42,6 +47,9 @@ class WeatherBar(object):
         currentUnit = self.unit[0].upper()
         self.app.title = f'{round(temperature)}{self.degreeSymbol}{currentUnit}'
 
+    def callUpdateWeather(self, sender):
+        self.refreshWeather()
+
     def setAPIKey(self, sender):
         updateAPI = rumps.Window(
             message='Enter your API key from OpenWeatherMap.',
@@ -60,9 +68,8 @@ class WeatherBar(object):
                 self.refreshWeather()
 
     def setLocation(self, sender):
-        print("location")
         setLocationWindow = rumps.Window(
-            message='Enter a city below to retrieve its current temperature in Fahrenheit.',
+            message='Enter a city below to retrieve the current temperature.',
             title='Change Location',
             dimensions=(300, 23)
         )
@@ -73,7 +80,7 @@ class WeatherBar(object):
             self.cityName = updateButton.text
             if self.api == '':
                 self.app.title = "Set API Key in 'Settings'"
-            else:
+            elif updateButton.text != '':
                 self.refreshWeather()
 
     def setCurrentUnit(self, sender):
